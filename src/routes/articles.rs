@@ -1,11 +1,10 @@
 use maud::{html, Markup};
 use crate::routes::main_page;
-use crate::models::article::Article;
+use crate::models::items::{Article, ArticleForm, FileStores};
 use rocket::State;
 use rocket::response::Redirect;
 use rocket::request::Form;
 use std::iter::FromIterator;
-use crate::models::file_store::FileStores;
 
 #[get("/")]
 pub fn list(store:State<FileStores>) -> Markup {
@@ -14,7 +13,7 @@ pub fn list(store:State<FileStores>) -> Markup {
 
     let content = html! {
         div class="row" {
-            div class="col s12 m6" {
+            div class="col s12 l6" {
                 div class="card" {
                     div class="card-image" {
                         a href="/articles/0" class="btn-floating halfway-fab blue darken-3" {
@@ -48,7 +47,6 @@ pub fn list(store:State<FileStores>) -> Markup {
 
 #[get("/<id>")]
 pub fn edit_page(id:String, store:State<FileStores>) -> Markup {
-    let method_name = if id.eq("0") {"post"} else {"put"};
     let article = {
         if id.eq("0") {
             Article {name: "".to_owned()}
@@ -58,33 +56,31 @@ pub fn edit_page(id:String, store:State<FileStores>) -> Markup {
         }
     };
 
-    let content = html! {
-        h5 {"Information article"}
-        div class="row" {
-            form class="col s12" action="/articles" method=(method_name) {
-                div class="row" {
-                    div class="input-field col s6" {
-                        input id="name" type="text" name="name" value={(article.name)};
-                        label class="active" for="name" {"Nom de l'article"}
-                    }
-                }
-                div class="row" {
-                    div class="col s12" {
-                        a href="/articles" class="btn-flat" {"Annuler"}
-                        input type="submit" value="Valider" class="btn blue darken-3";                        
-                    }                    
-                }
-            }       
-        }
-    };
-
-    main_page::page(content)    
+    main_page::item_detail(&id, &article)
 }
 
-#[post("/", data = "<article>")]
-pub fn create(article:Form<Article>, store:State<FileStores>) -> Redirect {
-    let id = store.articles.save(&article.into_inner());
-    dbg!(id.unwrap());
+#[post("/", data = "<form>")]
+pub fn create(form:Form<ArticleForm>, store:State<FileStores>) -> Redirect {
+	let article_form = form.into_inner();
+
+	let article = Article {
+		name: article_form.name
+	};
+
+    store.articles.save(&article).expect("erreur sauvegarde articles");
+
+    Redirect::to("/articles")
+}
+
+#[put("/", data = "<form>")]
+pub fn save(form:Form<ArticleForm>, store:State<FileStores>) -> Redirect {
+	let article_form = form.into_inner();
+
+	let article_updated = Article {
+		name: article_form.name
+	};
+
+	store.articles.save_with_id(&article_updated, &article_form.uuid).expect("erreur fichier articles");
 
     Redirect::to("/articles")
 }

@@ -7,13 +7,13 @@ mod config;
 mod routes;
 mod models;
 
-use models::file_store;
+use models::items;
 use jfs::Store;
 
 fn main() {
-    let file_store = file_store::FileStores {
-                        articles: Store::new("article").unwrap(),
-                        shops: Store::new("shop").unwrap()
+    let file_store = items::FileStores {
+                        articles: Store::new("articles").unwrap(),
+                        shops: Store::new("shops").unwrap()
                     };
 
     
@@ -23,6 +23,13 @@ fn main() {
         routes::articles::list, 
         routes::articles::edit_page,
         routes::articles::create,        
+        routes::articles::save,                
     ])    
+    .mount("/shops", routes![        
+        routes::shops::list, 
+        routes::shops::edit_page,
+        routes::shops::create,        
+        routes::shops::save,
+    ])        
     .launch();
 }
