@@ -1,3 +1,4 @@
 pub mod articles;
-pub mod shops;
 pub mod main_page;
+pub mod prices;
+pub mod shops;
