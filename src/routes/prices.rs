@@ -84,7 +84,11 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
 	let mut shop_select = vec![];
 	let article = store.articles.get::<Article>(&article_id).unwrap();
 
-	let article_prices = store.prices.get::<Vec<Price>>(&article_id).unwrap();
+	let article_prices = match store.prices.get::<Vec<Price>>(&article_id) {
+		Ok(prices) => prices,
+		_ => vec![]
+	};
+
 	for sp in shops {
 		if !article_prices.iter().any(|x| x.shop_id == sp.0) {
 			shop_select.push(sp);
