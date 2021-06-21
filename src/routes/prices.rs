@@ -229,7 +229,7 @@ pub fn create(form: Form<PriceForm>, store: State<FileStores>) -> Redirect {
 			.save_with_id(&article_prices, &form.article_id)
 			.expect("erreur sauvegarde du prix");
 
-		Redirect::to("/")
+		Redirect::to(format!("/articles/{}",&form.article_id))
 	} else {
 		Redirect::to("/")
 	}
