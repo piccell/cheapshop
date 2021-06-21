@@ -27,6 +27,7 @@ fn main() {
                 routes::prices::add_price_page,
                 routes::prices::view_page,
                 routes::prices::create,
+                routes::prices::save,                
                 routes::prices::remove
             ],
         )

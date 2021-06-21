@@ -155,47 +155,84 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
 pub fn view_page(article_id: String, shop_id: String, store: State<FileStores>) -> Markup {
 	let shops = store.get_sorted_shops();
 	
-	 let article = store.articles.get::<Article>(&article_id).unwrap();
+	let article = store.articles.get::<Article>(&article_id).unwrap();
 
-	 let price: Price = match store.prices.get::<Vec<Price>>(&article_id) {
-		  Ok(prices) => prices.into_iter().find(|x| x.shop_id.eq(&shop_id)).unwrap(),
-		  _ => Price {
-				shop_id: shop_id.clone(),
-				value: 0,
-				unit: "kg".to_string(),
-		  },
-	 };
+	let price: Price = match store.prices.get::<Vec<Price>>(&article_id) {
+		Ok(prices) => prices.into_iter().find(|x| x.shop_id.eq(&shop_id)).unwrap(),
+		_ => Price {
+			shop_id: shop_id.clone(),
+			value: 0,
+			unit: "kg".to_string(),
+		},
+	};
 
-	 let content = html! {
-		  h3	{"Prix "(article.name)}
-		  div class="row" {
-				div class="col s12 m6 l3" {
-					 div class="input-field" {
-						  form action="/prices" method="post" {
-								input type="hidden" name="_method" value="delete";
-								div class="row" {
-									 div class="col s12" {
-										  input type="hidden" name="article_id" value={(article_id)} {}
-										  input type="hidden" name="shop_id" value={(shop_id)} {}
-										  @if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
-												h5 {"à "(shop.1.name)}
-										  }
-									 }
+	let content = html! {
+		h3	{"Prix "(article.name)}
+		div class="row" {
+			div class="col s12 m6 l3" {
+				div class="input-field" {
+					form action="/prices" method="post" {
+						input type="hidden" name="_method" value="put";
+						div class="row" {
+							div class="col s12" {
+								input type="hidden" name="article_id" value={(article_id)} {}
+								input type="hidden" name="shop_id" value={(shop_id)} {}
+								input type="hidden" name="unit" value={(price.unit)} {}
+								input type="hidden" name="quantity" value="1" {}
+				
+								@if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
+									h5 {"à "(shop.1.name)}
 								}
-								div class="row " {
-									 div class="col s12 l6" {
-										  h4 { (price.euros())"€ / "(price.unit)}
-									 }
-								}
-
-								button class="btn red" type="submit" {"supprimer"}
-						  }
-					 }
+							}
+						}
+						div class="row " {
+							div class="col s3 l6 input-field" {
+								input type="text" id="price" name="price" value={(price.euros())};
+								label for="price" {"prix"}
+							}
+							div class="col s3" {
+								button class="btn" type="submit" {"modifier"}
+							}
+						}
+					}
 				}
-		  }
-	 };
+			}
+		}
+	div class="row" {
+		div class="col s12 m6 l3" {
+			form action="/prices" method="post" {				
+				input type="hidden" name="_method" value="delete";							  
+				input type="hidden" name="article_id" value={(article_id)} {}
+				input type="hidden" name="shop_id" value={(shop_id)} {}
 
-	 main_page::page(content)
+				button class="btn red" type="submit" {"supprimer"}
+			}
+		}
+	}
+	};
+
+	main_page::page(content)
+}
+
+#[put("/", data = "<form>")]
+pub fn save(form:Form<PriceForm>, store:State<FileStores>) -> Redirect {
+	if let Ok(article_prices) = store.prices.get::<Vec<Price>>(&form.article_id) {
+		let mut prices = article_prices;
+		if let Some(idx) = prices.iter().position(|x| *x.shop_id == form.shop_id) {
+			if let Ok(price) = form.price.parse::<f32>() {
+				let price = price::price_per_unit(price, 1.0, "kg".to_string());
+				let price = (price * 100.0) as usize;
+				prices[idx].value = price;
+
+				store
+				.prices
+				.save_with_id(&prices, &form.article_id)
+				.expect("erreur sauvegarde du prix");				
+			}
+		}
+	};
+
+	Redirect::to("/")
 }
 
 #[post("/", data = "<form>")]
@@ -243,11 +280,11 @@ pub fn remove(form: Form<PriceDeleteForm>, store: State<FileStores>) -> Redirect
 		let mut prices = article_prices;
 		if let Some(idx) = prices.iter().position(|x| *x.shop_id == form.shop_id) {
 			prices.remove(idx);
-			dbg!(&prices);
+
 			store
-					.prices
-					.save_with_id(&prices, &form.article_id)
-					.expect("erreur sauvegarde du prix");
+				.prices
+				.save_with_id(&prices, &form.article_id)
+				.expect("erreur sauvegarde du prix");
 		}
 	};
 
