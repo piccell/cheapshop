@@ -1,7 +1,7 @@
 use crate::models::article::{Article, ArticleForm};
+use crate::models::file_stores::FileStores;
 use crate::models::price::Price;
 use crate::models::shop::Shop;
-use crate::models::file_stores::FileStores;
 use crate::routes::main_page;
 use maud::{html, Markup};
 use rocket::request::Form;
@@ -73,31 +73,40 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
         }
     };
 
-    let priced_shops: Vec<(Shop, usize)> = prices
+    let priced_shops = prices
         .iter()
-        .map(|x| (store.shops.get(&x.store_id).unwrap(), x.price))
-        .collect();
+        .map(|x| (store.shops.get(&x.shop_id).unwrap(), x.value))
+        .collect::<Vec<(Shop, usize)>>();
 
     let form = main_page::item_detail(&id, &article, "Fiche article", "/articles");
 
     let prices = html! {
-        table class="striped" {
-            tbody {
-                @for ps in priced_shops {
-                    tr {
-                        td { (ps.0.name) }
-                        td { (format!("{} euros",ps.1 as f32 / 100.0)) }
+        @if priced_shops.len() > 0 {
+            table class="striped" {
+                tbody {
+                    @for ps in priced_shops {
+                        tr {
+                            td { (ps.0.name) }
+                            td { (format!("{} euros",ps.1 as f32 / 100.0)) }
+                        }
                     }
                 }
             }
         }
+        @else {
+            p {"Aucun prix enregistré"}
+        }
     };
 
     let content = html! {
-        (form)
-        div class="divider" {}
-        a href={"/prices/"(id)} class="waves-effect waves-light btn green accent-4" {"Ajouter un prix"}
-        (prices)
+        div class="row" {
+            div class="col s12 l6" {
+                (form)
+                div class="divider" {}
+                a href={"/prices/"(id)} {"Ajouter un prix"}
+                (prices)
+            }
+        }
     };
 
     main_page::page(content)
@@ -105,11 +114,9 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
 
 #[post("/", data = "<form>")]
 pub fn create(form: Form<ArticleForm>, store: State<FileStores>) -> Redirect {
-    let article_form = form.into_inner();
+    let form = form.into_inner();
 
-    let article = Article {
-        name: article_form.name,
-    };
+    let article = Article { name: form.name };
 
     store
         .articles
@@ -121,15 +128,13 @@ pub fn create(form: Form<ArticleForm>, store: State<FileStores>) -> Redirect {
 
 #[put("/", data = "<form>")]
 pub fn save(form: Form<ArticleForm>, store: State<FileStores>) -> Redirect {
-    let article_form = form.into_inner();
+    let form = form.into_inner();
 
-    let article_updated = Article {
-        name: article_form.name,
-    };
+    let article_updated = Article { name: form.name };
 
     store
         .articles
-        .save_with_id(&article_updated, &article_form.uuid)
+        .save_with_id(&article_updated, &form.uuid)
         .expect("erreur fichier articles");
 
     Redirect::to("/articles")

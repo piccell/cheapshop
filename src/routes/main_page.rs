@@ -3,13 +3,37 @@ use maud::{html, Markup, DOCTYPE};
 
 fn header() -> Markup {
     html! {
-         (DOCTYPE)
-         head {
-             meta charset="utf-8";
-             link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css";
-             link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet";
-             meta name="viewport" content="width=device-width, initial-scale=1.0";
-         }
+        (DOCTYPE)
+        head {
+            meta charset="utf-8";
+            link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css";
+            link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet";
+            meta name="viewport" content="width=device-width, initial-scale=1.0";
+        }
+        style {
+            r#"
+			td {
+				text-align: center
+			}
+
+			table thead tr th {
+				text-align: center
+			}
+
+			td a:link {
+				color: black ;
+			}
+
+			td a:visited {
+				color:black;
+			}
+
+			.cheappest {
+				background-color:green;
+				color:white;
+			}
+			"#
+        }
     }
 }
 

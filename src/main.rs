@@ -19,8 +19,17 @@ fn main() {
 
     rocket::custom(config::from_env())
         .manage(file_store)
-        .mount("/", routes![routes::prices::list,])
-        .mount("/prices", routes![routes::prices::edit_page,])
+        .mount("/", routes![routes::prices::list])
+        .mount(
+            "/prices",
+            routes![
+                routes::prices::list,
+                routes::prices::add_price_page,
+                routes::prices::view_page,
+                routes::prices::create,
+                routes::prices::remove
+            ],
+        )
         .mount(
             "/articles",
             routes![
