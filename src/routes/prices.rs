@@ -1,4 +1,4 @@
-use crate::models::article::{self, Article};
+use crate::models::article::Article;
 use crate::models::file_stores::FileStores;
 use crate::models::price::{self, Price, PriceDeleteForm, PriceForm};
 use crate::routes::main_page;
