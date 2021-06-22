@@ -56,7 +56,7 @@ pub fn page(content: Markup) -> Markup {
         body {
             nav {
                 div class="nav-wrapper orange darken-4" {
-                    a href="#!" class="brand-logo" {"Mes courses"}
+                    a href="#!" class="brand-logo" {"Courses"}
                     a href="#" data-target="mobile-demo" class="sidenav-trigger" {
                         i class="material-icons" {"menu"}
                     }
