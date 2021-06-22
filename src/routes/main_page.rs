@@ -83,7 +83,7 @@ pub fn page(content: Markup) -> Markup {
 
 pub fn item_detail<T: ItemName>(id: &String, item: &T, title: &str, route: &str) -> Markup {
     html! {
-        h5 {(title)}
+        h5	{ a href="/" { { icon class="large material-icons" {"arrow_back"} (title)} } }        
         div class="row" {
             form class="col s12" action={(route)} method="post" {
                 @if !id.eq("0") {
