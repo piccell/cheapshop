@@ -73,10 +73,10 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
         }
     };
 
-    let priced_shops = prices
+    let priced_shops:Vec<(Shop, usize)> = prices
         .iter()
         .map(|x| (store.shops.get(&x.shop_id).unwrap(), x.value))
-        .collect::<Vec<(Shop, usize)>>();
+        .collect();
 
     let form = main_page::item_detail(&id, &article, "Fiche article", "/articles");
 
