@@ -25,7 +25,7 @@ fn main() {
             routes![
                 routes::prices::list,
                 routes::prices::add_price_page,
-                routes::prices::view_page,
+                routes::prices::edit_price_page,
                 routes::prices::create,
                 routes::prices::save,                
                 routes::prices::remove

@@ -47,35 +47,36 @@ pub fn list(store: State<FileStores>) -> Markup {
 }
 
 fn view_article_price_in_shop(
-	 prices: &BTreeMap<String, Vec<Price>>,
-	 art_id: (String, Article),
-	 shops: Vec<String>,
+    prices: &BTreeMap<String, Vec<Price>>,
+    art_id: (String, Article),
+    shops: Vec<String>,
 ) -> Markup {
-	 if let Some(article_prices) = prices.get(&art_id.0) {
-		  let min_price = article_prices.iter().map(|x| x.value).min().unwrap_or(0);
+    if let Some(article_prices) = prices.get(&art_id.0) {
+        let min_price = article_prices.iter().map(|x| x.value).min().unwrap_or(0);
 
-		  html! {
-				@for shop in shops {
-					 @if let Some(p) = article_prices.iter().find(|x| x.shop_id.eq(&shop)) {
-						  @let bg_class = if p.value == min_price {"green lighten-3 white-text"} else {""};
-						  @let p = p.value as f32 / 100.0;
+        html! {
+            @for shop in shops {
+                @if let Some(p) = article_prices.iter().find(|x| x.shop_id.eq(&shop)) {
+                    @let bg_class = if p.value == min_price {"green lighten-3 white-text"} else {""};
+                    @let p = p.value as f32 / 100.0;
 
-						  td class={(bg_class)} {
-								a href={"/prices/view/"(&art_id.0)"/"(&shop)} { (p.to_string()) }
-						  }
-					 }
-					 @else {
-						  td {}
-					 }
-				}
-		  }
-	 } else {
-		  html! {
-				@for _ in shops {
-					 td {}
-				}
-		  }
-	 }
+                    td class={(bg_class)} {
+                        a href={"/prices/edit/"(&art_id.0)"/"(&shop)} { (p.to_string()) }
+                    }
+                }
+                @else {
+                    td {}
+                }
+            }
+        }
+    } 
+    else {
+        html! {
+            @for _ in shops {
+                td {}
+            }
+        }
+    }
 }
 
 #[get("/<article_id>")]
@@ -112,36 +113,7 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
 						}
 					}
 
-					div class="row" {
-						div class="col s12 input-field" {
-							input type="text" id="price" placeholder="prix" class="validate" name="price";
-							label for="price" {"Prix"}
-						}
-					}
-
-
-					div class="row" {
-						div class="col s8 input-field" {
-							input type="text" id="quantity" placeholder="quantité" class="validate" name="quantity";
-							label for="quantity" {"Quantité"}
-						}
-
-						div class="col s4 input-field" {
-							select name="unit" {
-								optgroup label="poids" {
-									option value="kg" {"Kg"}
-									option value="g" {"g"}
-								}
-								optgroup label="volume" {
-									option value="l" {"l"}
-									option value="cl" {"cl"}
-									option value="ml" {"ml"}
-								}								
-							}
-							label {"Unité"}
-						}
-					}
-
+                    (article_pricing_html())
 					button class="btn " type="submit" {"Valider"}				
 				}
 			}
@@ -150,9 +122,41 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
 
 	main_page::page(content)
 }
+fn article_pricing_html() -> Markup {    
+    html! {
+        div class="row" {
+            div class="col s12 input-field" {
+                input type="text" id="price" placeholder="prix" class="validate" name="price";
+                label for="price" {"Prix"}
+            }
+        }
 
-#[get("/view/<article_id>/<shop_id>")]
-pub fn view_page(article_id: String, shop_id: String, store: State<FileStores>) -> Markup {
+        div class="row" {
+            div class="col s8 input-field" {
+                input type="text" id="quantity" placeholder="quantité" class="validate" name="quantity";
+                label for="quantity" {"Quantité"}
+            }
+
+            div class="col s4 input-field" {
+                select name="unit" {
+                    optgroup label="poids" {
+                        option value="kg" {"Kg"}
+                        option value="g" {"g"}
+                    }
+                    optgroup label="volume" {
+                        option value="l" {"l"}
+                        option value="cl" {"cl"}
+                        option value="ml" {"ml"}
+                    }								
+                }
+                label {"Unité"}
+            }
+        }
+    }
+}
+
+#[get("/edit/<article_id>/<shop_id>")]
+pub fn edit_price_page(article_id: String, shop_id: String, store: State<FileStores>) -> Markup {
 	let shops = store.get_sorted_shops();
 	
 	let article = store.articles.get::<Article>(&article_id).unwrap();
@@ -167,30 +171,38 @@ pub fn view_page(article_id: String, shop_id: String, store: State<FileStores>) 
 	};
 
 	let content = html! {
-		h3	{"Prix "(article.name)}
+		h3	{ a href="/" { { icon class="large material-icons" {"arrow_back"} (article.name)} } }
 		div class="row" {
 			div class="col s12 m6 l3" {
 				div class="input-field" {
 					form action="/prices" method="post" {
 						input type="hidden" name="_method" value="put";
+                        input type="hidden" name="article_id" value={(article_id)};
+                        input type="hidden" name="shop_id" value={(shop_id)};
+
 						div class="row" {
 							div class="col s12" {
-								input type="hidden" name="article_id" value={(article_id)} {}
-								input type="hidden" name="shop_id" value={(shop_id)} {}
-								input type="hidden" name="unit" value={(price.unit)} {}
-								input type="hidden" name="quantity" value="1" {}
-				
 								@if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
-									h5 {"à "(shop.1.name)}
+									h5 {"Modifier le prix pour "(shop.1.name)}
 								}
 							}
 						}
 						div class="row " {
-							div class="col s3 l6 input-field" {
-								input type="text" id="price" name="price" value={(price.euros())};
-								label for="price" {"prix"}
+							div class="col s3 l6 input-field" {                                
+                                h5 {(price.euros())" / "(price.unit)}
 							}
-							div class="col s3" {
+                            (article_pricing_html())
+                            div class="col s3 l6" {
+                                form action="/prices" method="post" {				
+                                    input type="hidden" name="_method" value="delete";							  
+                                    input type="hidden" name="article_id" value={(article_id)} {}
+                                    input type="hidden" name="shop_id" value={(shop_id)} {}
+                
+                                    button class="btn red" type="submit" {"supprimer"}
+                                }
+                
+                            }
+							div class="col s3 l6" {
 								button class="btn" type="submit" {"modifier"}
 							}
 						}
@@ -198,17 +210,6 @@ pub fn view_page(article_id: String, shop_id: String, store: State<FileStores>) 
 				}
 			}
 		}
-	div class="row" {
-		div class="col s12 m6 l3" {
-			form action="/prices" method="post" {				
-				input type="hidden" name="_method" value="delete";							  
-				input type="hidden" name="article_id" value={(article_id)} {}
-				input type="hidden" name="shop_id" value={(shop_id)} {}
-
-				button class="btn red" type="submit" {"supprimer"}
-			}
-		}
-	}
 	};
 
 	main_page::page(content)
@@ -220,7 +221,7 @@ pub fn save(form:Form<PriceForm>, store:State<FileStores>) -> Redirect {
 		let mut prices = article_prices;
 		if let Some(idx) = prices.iter().position(|x| *x.shop_id == form.shop_id) {
 			if let Ok(price) = form.price.parse::<f32>() {
-				let price = price::price_per_unit(price, 1.0, "kg".to_string());
+				let price = price::price_per_unit(price, form.quantity, form.unit.to_string());
 				let price = (price * 100.0) as usize;
 				prices[idx].value = price;
 
