@@ -73,21 +73,25 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
         }
     };
 
-    let priced_shops:Vec<(Shop, usize)> = prices
-        .iter()
-        .map(|x| (store.shops.get(&x.shop_id).unwrap(), x.value))
-        .collect();
+    let nb_shops = store.get_sorted_shops().len();
+
+    let priced_shops = prices
+        .into_iter()
+        .map(|x| (store.shops.get(&x.shop_id).unwrap(), x))
+        .collect::<Vec<(Shop, Price)>>();
 
     let form = main_page::item_detail(&id, &article, "Fiche article", "/articles");
-
+    
     let prices = html! {
         @if priced_shops.len() > 0 {
             table class="striped" {
                 tbody {
-                    @for ps in priced_shops {
+                    @for ps in &priced_shops {
                         tr {
                             td { (ps.0.name) }
-                            td { (format!("{} euros",ps.1 as f32 / 100.0)) }
+                            td { 
+                                a href={"/prices/edit/"(id)"/"(ps.1.shop_id)} { (format!("{} €/{}", ps.1.value as f32 / 100.0, ps.1.unit)) }
+                            }
                         }
                     }
                 }
@@ -100,10 +104,12 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
 
     let content = html! {
         div class="row" {
-            div class="col s12 l6" {
+            div class="col s12 m6" {
                 (form)
                 div class="divider" {}
-                a href={"/prices/"(id)} {"Ajouter un prix"}
+                @if priced_shops.len() < nb_shops {
+                    a href={"/prices/"(id)} {"+ Ajouter un prix"}
+                }
                 (prices)
             }
         }

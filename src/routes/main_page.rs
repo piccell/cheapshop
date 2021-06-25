@@ -91,11 +91,11 @@ pub fn item_detail<T: ItemName>(id: &String, item: &T, title: &str, route: &str)
                 }
                 input type="hidden" name="uuid" value={(id)}
                 div class="row valign-wrapper" {
-                    div class="input-field col s6" {
+                    div class="input-field col s10 m4" {
                         input id="name" type="text" name="name" value={(item.name())};
                         label class="active" for="name" {"Nom"}
                     }
-                    div class="col s6 input-field" {
+                    div class="col s2 input-field" {
                         input type="submit" value="OK" class="btn green accent-4";
                     }
                 }

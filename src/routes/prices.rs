@@ -1,4 +1,5 @@
 use crate::models::article::Article;
+use crate::models::shop::Shop;
 use crate::models::file_stores::FileStores;
 use crate::models::price::{self, Price, PriceDeleteForm, PriceForm};
 use crate::routes::main_page;
@@ -10,71 +11,64 @@ use std::collections::BTreeMap;
 
 #[get("/")]
 pub fn list(store: State<FileStores>) -> Markup {
-     let articles = store.get_sorted_articles();
-     let shops = store.get_sorted_shops();
-     let prices: BTreeMap<String, Vec<Price>> = store.prices.all().unwrap();
+    let articles = store.get_sorted_articles();
+    let shops = store.get_sorted_shops();
+    let prices: BTreeMap<String, Vec<Price>> = store.prices.all().unwrap();
 
-     let content = html! {
-            h1 {"Prix"}
-            div class="row" {
-                 div class="col s12 m10 l8" {
-                      table {
-                            thead {
-                                 tr {
-                                      td {}
-                                      @for shop in &shops {
-                                            th {(shop.1.name)}
-                                      }
-                                 }
+    let content = html! {
+        h1 {"Prix"}
+        div class="row" {
+            div class="col s12 m7 l8" {
+                table {
+                    tbody {
+                        @for art in articles {
+                        tr {
+                            th {
+                                a href={"/articles/"(art.0)} {(art.1.name)}
                             }
-                            tbody {
-                                 @for art in articles {
-                                      @let store_ids = shops.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
-                                      tr {
-                                            th {
-                                                 a href={"/articles/"(art.0)} {(art.1.name)}
-                                            }
-                                            (view_article_price_in_shop(&prices, art, store_ids.clone()))
-                                      }
-                                 }
-                            }
-                      }
-                 }
+                            (view_article_price_in_shop(&prices, art, &shops))
+                        }}
+                    }
+                }
             }
-     };
+        }
+    };
 
-     main_page::page(content)
+    main_page::page(content)
 }
 
 fn view_article_price_in_shop(
     prices: &BTreeMap<String, Vec<Price>>,
     art_id: (String, Article),
-    shops: Vec<String>,
+    shops: &Vec<(String,Shop)>,
 ) -> Markup {
     if let Some(article_prices) = prices.get(&art_id.0) {
-        let min_price = article_prices.iter().map(|x| x.value).min().unwrap_or(0);
+        if let Some(min_price) = article_prices.iter().min_by_key(|p| &p.value) {
+            if let Some(cheap_shop) = shops.iter().find(|x| x.0.eq(&min_price.shop_id)) {
+                let p = min_price.value as f32 / 100.0;
 
-        html! {
-            @for shop in shops {
-                @if let Some(p) = article_prices.iter().find(|x| x.shop_id.eq(&shop)) {
-                    @let bg_class = if p.value == min_price {"green lighten-3 white-text"} else {""};
-                    @let p = p.value as f32 / 100.0;
-
-                    td class={(bg_class)} {
-                        a href={"/prices/edit/"(&art_id.0)"/"(&shop)} { (p.to_string()) }
+                html! {
+                    td {
+                        (cheap_shop.1.name) br;
+                        (p.to_string())" €/"(min_price.unit)   
                     }
                 }
-                @else {
-                    td {}
+            }
+            else {
+                html! {
+                    td;
                 }
             }
         }
-    } 
+        else {
+            html! {
+                td;
+            }
+        }
+    }
     else {
         html! {
-            @for _ in shops {
-                td {}
-            }
+            td;
         }
     }
 }
@@ -184,7 +178,7 @@ pub fn edit_price_page(article_id: String, shop_id: String, store: State<FileSto
                             div class="col s12" {
                                 @if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
                                     h5 {"Prix pour "(shop.1.name)}
-                                    h5 {(price.euros())" / "(price.unit)}                                    
+                                    h5 {(price.euros())" €/"(price.unit)}                                    
                                 }
                             }
                         }
