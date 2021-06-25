@@ -16,6 +16,9 @@ cargo build --release --target x86_64-unknown-linux-musl
 ```
 
 # versions
+1.0.0 25/06/21
+V1
+
 0.13.0 22/06/21
 modification prix existant
 
