@@ -104,10 +104,10 @@ pub fn edit_page(id: String, store: State<FileStores>) -> Markup {
 
     let content = html! {
         div class="row" {
-            div class="col s12 m6" {
+            div class="col s12 m12 l12" {
                 (form)
                 div class="divider" {}
-                @if priced_shops.len() < nb_shops {
+                @if priced_shops.len() < nb_shops  && !id.eq("0") {
                     a href={"/prices/"(id)} {"+ Ajouter un prix"}
                 }
                 (prices)
