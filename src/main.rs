@@ -6,6 +6,7 @@ extern crate rocket;
 mod config;
 mod models;
 mod routes;
+mod views;
 
 use jfs::Store;
 use models::file_stores::FileStores;
@@ -27,7 +28,7 @@ fn main() {
                 routes::prices::add_price_page,
                 routes::prices::edit_price_page,
                 routes::prices::create,
-                routes::prices::save,                
+                routes::prices::save,
                 routes::prices::remove
             ],
         )

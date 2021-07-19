@@ -1,76 +1,19 @@
 use crate::models::article::Article;
-use crate::models::shop::Shop;
 use crate::models::file_stores::FileStores;
 use crate::models::price::{self, Price, PriceDeleteForm, PriceForm};
-use crate::routes::main_page;
-use maud::{html, Markup};
+use crate::views;
+use maud::Markup;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket::State;
-use std::collections::BTreeMap;
 
 #[get("/")]
 pub fn list(store: State<FileStores>) -> Markup {
     let articles = store.get_sorted_articles();
     let shops = store.get_sorted_shops();
-    let prices: BTreeMap<String, Vec<Price>> = store.prices.all().unwrap();
+    let prices = store.prices.all().unwrap();
 
-    let content = html! {
-        h1 {"Prix"}
-        div class="row" {
-            div class="col s12 m7 l8" {
-                table {
-                    tbody {
-                        @for art in articles {
-                        tr {
-                            th {
-                                a href={"/articles/"(art.0)} {(art.1.name)}
-                            }
-                            (view_article_price_in_shop(&prices, art, &shops))
-                        }}
-                    }
-                }
-            }
-        }
-    };
-
-    main_page::page(content)
-}
-
-fn view_article_price_in_shop(
-    prices: &BTreeMap<String, Vec<Price>>,
-    art_id: (String, Article),
-    shops: &Vec<(String,Shop)>,
-) -> Markup {
-    if let Some(article_prices) = prices.get(&art_id.0) {
-        if let Some(min_price) = article_prices.iter().min_by_key(|p| &p.value) {
-            if let Some(cheap_shop) = shops.iter().find(|x| x.0.eq(&min_price.shop_id)) {
-                let p = min_price.value as f32 / 100.0;
-
-                html! {
-                    td {
-                        (cheap_shop.1.name) br;
-                        (p.to_string())" €/"(min_price.unit)   
-                    }
-                }
-            }
-            else {
-                html! {
-                    td;
-                }
-            }
-        }
-        else {
-            html! {
-                td;
-            }
-        }
-    }
-    else {
-        html! {
-            td;
-        }
-    }
+    views::prices::list(articles, shops, prices)
 }
 
 #[get("/<article_id>")]
@@ -81,81 +24,25 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
 
     let article_prices = match store.prices.get::<Vec<Price>>(&article_id) {
         Ok(prices) => prices,
-        _ => vec![]
+        _ => vec![],
     };
 
-    for sp in shops {
+    for sp in &shops {
         if !article_prices.iter().any(|x| x.shop_id == sp.0) {
             shop_select.push(sp);
         }
     }
-    
-    let content = html! {
-        h3	{"Prix "(article.name)}
-        div class="row" {
-            div class="col s12 m6 l3" {
-                form action="/prices" method="post" {
-                    input type="hidden" name="article_id" value={(article_id)};							  
-                    div class="row" {
-                        div class="col s12 input-field" {
-                            select name="shop_id" {
-                                option value="" disabled selected {"Choisir un magasin"}
-                                @for shop in shop_select {
-                                    option value={(shop.0)} {(shop.1.name)}
-                                }
-                            }
-                        }
-                    }
 
-                    (article_pricing_html())
-                    button class="btn " type="submit" {"Valider"}				
-                }
-            }
-        }		
-    };
-
-    main_page::page(content)
-}
-
-fn article_pricing_html() -> Markup {    
-    html! {
-        div class="row" {
-            div class="col s12 input-field" {
-                input type="text" id="price" placeholder="prix" class="validate" name="price";
-                label for="price" {"Prix"}
-            }
-        }
-        div class="row" {
-            div class="col s8 input-field" {
-                input type="text" id="quantity" placeholder="quantité" class="validate" name="quantity";
-                label for="quantity" {"Quantité"}
-            }
-
-            div class="col s4 input-field" {
-                select name="unit" {
-                    optgroup label="poids" {
-                        option value="kg" {"Kg"}
-                        option value="g" {"g"}
-                    }
-                    optgroup label="volume" {
-                        option value="l" {"l"}
-                        option value="cl" {"cl"}
-                        option value="ml" {"ml"}
-                    }								
-                }
-                label {"Unité"}
-            }
-        }
-    }
+    views::prices::article_list(article, article_id, shops)
 }
 
 #[get("/edit/<article_id>/<shop_id>")]
 pub fn edit_price_page(article_id: String, shop_id: String, store: State<FileStores>) -> Markup {
     let shops = store.get_sorted_shops();
-    
+
     let article = store.articles.get::<Article>(&article_id).unwrap();
 
-    let price: Price = match store.prices.get::<Vec<Price>>(&article_id) {
+    let price = match store.prices.get::<Vec<Price>>(&article_id) {
         Ok(prices) => prices.into_iter().find(|x| x.shop_id.eq(&shop_id)).unwrap(),
         _ => Price {
             shop_id: shop_id.clone(),
@@ -164,51 +51,11 @@ pub fn edit_price_page(article_id: String, shop_id: String, store: State<FileSto
         },
     };
 
-    let content = html! {
-        h5	{ a href="/" { { icon class="large material-icons" {"arrow_back"} (article.name)} } }
-        div class="row" {
-            div class="col s12 m6 l3" {
-                div class="input-field" {
-                    form action="/prices" method="post" {
-                        input type="hidden" name="_method" value="put";
-                        input type="hidden" name="article_id" value={(article_id)};
-                        input type="hidden" name="shop_id" value={(shop_id)};
-
-                        div class="row" {
-                            div class="col s12" {
-                                @if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
-                                    h5 {"Prix pour "(shop.1.name)}
-                                    h5 {(price.euros())" €/"(price.unit)}                                    
-                                }
-                            }
-                        }
-                        (article_pricing_html())
-                        div class="row" {
-                            div class="col s6 l6" {
-                                form action="/prices" method="post" {				
-                                    input type="hidden" name="_method" value="delete";							  
-                                    input type="hidden" name="article_id" value={(article_id)} {}
-                                    input type="hidden" name="shop_id" value={(shop_id)} {}
-            
-                                    button class="btn red" type="submit" {"supprimer"}
-                                }
-            
-                            }
-                            div class="col s6 l6" {
-                                button class="btn" type="submit" {"modifier"}
-                            }                
-                        }        
-                    }
-                }
-            }
-        }
-    };
-
-    main_page::page(content)
+    views::prices::article_edit(article, article_id, price, shop_id, shops)    
 }
 
 #[put("/", data = "<form>")]
-pub fn save(form:Form<PriceForm>, store:State<FileStores>) -> Redirect {
+pub fn save(form: Form<PriceForm>, store: State<FileStores>) -> Redirect {
     if let Ok(article_prices) = store.prices.get::<Vec<Price>>(&form.article_id) {
         let mut prices = article_prices;
         if let Some(idx) = prices.iter().position(|x| *x.shop_id == form.shop_id) {
@@ -218,9 +65,9 @@ pub fn save(form:Form<PriceForm>, store:State<FileStores>) -> Redirect {
                 prices[idx].value = price;
 
                 store
-                .prices
-                .save_with_id(&prices, &form.article_id)
-                .expect("erreur sauvegarde du prix");				
+                    .prices
+                    .save_with_id(&prices, &form.article_id)
+                    .expect("erreur sauvegarde du prix");
             }
         }
     };
@@ -250,7 +97,7 @@ pub fn create(form: Form<PriceForm>, store: State<FileStores>) -> Redirect {
         match article_prices.iter().find(|x| x.shop_id.eq(&form.shop_id)) {
             Some(_) => {}
             _ => {
-                    article_prices.push(new_price);
+                article_prices.push(new_price);
             }
         }
 
@@ -259,7 +106,7 @@ pub fn create(form: Form<PriceForm>, store: State<FileStores>) -> Redirect {
             .save_with_id(&article_prices, &form.article_id)
             .expect("erreur sauvegarde du prix");
 
-        Redirect::to(format!("/articles/{}",&form.article_id))
+        Redirect::to(format!("/articles/{}", &form.article_id))
     } else {
         Redirect::to("/")
     }

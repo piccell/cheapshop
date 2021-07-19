@@ -18,6 +18,9 @@ test avec other user
 
 
 # versions
+1.1.0 19/07/21
+Refactoring: modules views
+
 1.0.0 25/06/21
 V1
 
