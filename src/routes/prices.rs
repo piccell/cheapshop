@@ -27,13 +27,15 @@ pub fn add_price_page(article_id: String, store: State<FileStores>) -> Markup {
         _ => vec![],
     };
 
-    for sp in &shops {
+    dbg!(&article_prices);
+    for sp in shops {
+        dbg!(sp.0.clone());
         if !article_prices.iter().any(|x| x.shop_id == sp.0) {
             shop_select.push(sp);
         }
     }
 
-    views::prices::article_list(article, article_id, shops)
+    views::prices::edit(article, article_id, shop_select)
 }
 
 #[get("/edit/<article_id>/<shop_id>")]

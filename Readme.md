@@ -18,6 +18,11 @@ test avec other user
 
 
 # versions
+1.2.0 20/07/21
+Correction suppression prix
+Correction navigation
+Amélioration affichage (tri sur liste magasin dans fiche article)
+
 1.1.0 19/07/21
 Refactoring: modules views
 

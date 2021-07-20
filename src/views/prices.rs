@@ -44,50 +44,44 @@ fn view_article_price_in_shop(
 
 				html! {
 					td {
-						(cheap_shop.1.name) br;
-						(p.to_string())" €/"(min_price.unit)
-						}
+                    (cheap_shop.1.name) br;
+                    (p.to_string())" €/"(min_price.unit)
+                    }
 				}
 			} else {
-				html! {
-					td;
-				}
+				html! { td; }
 			}
 		} else {
-			html! {
-				td;
-			}
+			html! { td; }
 		}
 	} else {
-		html! {
-			td;
-		}
+		html! { td; }
 	}
 }
 
-pub fn article_list(article:Article, article_id:String, shops:Vec<(String, Shop)>) -> Markup {
+pub fn edit(article:Article, article_id:String, shops:Vec<(String, Shop)>) -> Markup {
 	let content = html! {
 		h3	{"Prix "(article.name)}
 		div class="row" {
-			 div class="col s12 m6 l3" {
-				  form action="/prices" method="post" {
-						input type="hidden" name="article_id" value={(article_id)};
-						div class="row" {
-							 div class="col s12 input-field" {
-								  select name="shop_id" {
-										option value="" disabled selected {"Choisir un magasin"}
-										@for shop in shops {
-											 option value={(shop.0)} {(shop.1.name)}
-										}
-								  }
-							 }
-						}
+            div class="col s12 m6 l3" {
+                form action="/prices" method="post" {
+                    input type="hidden" name="article_id" value={(article_id)};
+                    div class="row" {
+                        div class="col s12 input-field" {
+                            select name="shop_id" {
+                                option value="" disabled selected {"Choisir un magasin"}
+                                @for shop in shops {
+                                    option value={(shop.0)} {(shop.1.name)}
+                                }
+                            }
+                        }
+					}
 	
-						(article_pricing_html())
-						button class="btn " type="submit" {"Valider"}
-				  }
-			 }
-		}
+					(article_pricing_html())
+					button class="btn " type="submit" {"Valider"}
+			    }
+		    }
+	    }
 	};
 	
 	main::page(content)
@@ -101,74 +95,73 @@ pub fn article_edit(
 	shops: Vec<(String, Shop)>
 ) -> Markup {
 	let content = html! {
-		h5	{ a href="/" { { icon class="large material-icons" {"arrow_back"} (article.name)} } }
+		h5	{ a href={"/articles/"(article_id)} { { icon class="large material-icons" {"arrow_back"} (article.name)} } }
 		div class="row" {
-			 div class="col s12 m6 l3" {
-				  div class="input-field" {
-						form action="/prices" method="post" {
-							input type="hidden" name="_method" value="put";
-							input type="hidden" name="article_id" value={(article_id)};
-							input type="hidden" name="shop_id" value={(shop_id)};
+            div class="col s12 m6 l3" {
+                form action="/prices" method="post" {
+                    input type="hidden" name="_method" value="put";
+                    input type="hidden" name="article_id" value={(article_id)};
+                    input type="hidden" name="shop_id" value={(shop_id)};
 
-							div class="row" {
-								div class="col s12" {
-								@if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
-									h5 {"Prix pour "(shop.1.name)}
-									h5 {(price.euros())" €/"(price.unit)}
-								}}
-							}
-							(article_pricing_html())
-							div class="row" {
-								div class="col s6 l6" {
-									form action="/prices" method="post" {
-										input type="hidden" name="_method" value="delete";
-										input type="hidden" name="article_id" value={(article_id)} {}
-										input type="hidden" name="shop_id" value={(shop_id)} {}
+                    div class="row" {
+                        div class="col s12" {
+                        @if let Some(shop) = shops.iter().find(|x| x.0.eq(&shop_id)) {
+                            h5 {(price.euros())" €/"(price.unit)" à "(shop.1.name)}
+                        }}
+                    }
+                    (article_pricing_html())
+                    div class="row" {
+                        div class="col s6 l6" {
+                            button class="btn" type="submit" {"modifier"}
+                        }
+                    }
+                }
+            }
+        }
+        div class="row" {
+            div class="col s6 l6" {
+                form action="/prices" method="post" {
+                    input type="hidden" name="_method" value="delete";
+                    input type="hidden" name="article_id" value={(article_id)} {}
+                    input type="hidden" name="shop_id" value={(shop_id)} {}
 
-										button class="btn red" type="submit" {"supprimer"}
-									}
-								}
-								div class="col s6 l6" {
-									button class="btn" type="submit" {"modifier"}
-								}
-							}
-						}
-				  	}
-			 	}
-			}
-  		};
+                    button class="btn red" type="submit" {"supprimer"}
+                }
+            }
+        }
+  	};
 
   	main::page(content)	
 }
 
 fn article_pricing_html() -> Markup {
 	html! {
-		 div class="row" {
-			  div class="col s12 input-field" {
-					input type="text" id="price" placeholder="prix" class="validate" name="price";
-					label for="price" {"Prix"}
-			  }
-		 }
-		 div class="row" {
-			  div class="col s8 input-field" {
-					input type="text" id="quantity" placeholder="quantité" class="validate" name="quantity";
-					label for="quantity" {"Quantité"}
-			  }
+        div class="row" {
+            div class="col s12 input-field" {
+                input type="text" id="price" placeholder="prix" class="validate" name="price";
+                label for="price" {"Prix"}
+            }
+        }
+        div class="row" {
+            div class="col s8 input-field" {
+                input type="text" id="quantity" placeholder="quantité" class="validate" name="quantity";
+                label for="quantity" {"Quantité"}
+            }
 
-			  div class="col s4 input-field" {
-					select name="unit" {
-						 optgroup label="poids" {
-							  option value="kg" {"Kg"}
-							  option value="g" {"g"}
-						 }
-						 optgroup label="volume" {
-							  option value="l" {"l"}
-							  option value="cl" {"cl"}
-							  option value="ml" {"ml"}
-						 }
-					}
-					label {"Unité"}
-			  }
-		 }
+            div class="col s4 input-field" {
+                select name="unit" {
+                    optgroup label="poids" {
+                        option value="kg" {"Kg"}
+                        option value="g" {"g"}
+                    }
+                    optgroup label="volume" {
+                        option value="l" {"l"}
+                        option value="cl" {"cl"}
+                        option value="ml" {"ml"}
+                    }
+                }
+                label {"Unité"}
+            }
+        }
 	}
 }

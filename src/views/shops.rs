@@ -37,7 +37,7 @@ pub fn list(entries:Vec<(String, Shop)>) -> Markup {
 }
 
 pub fn detail(id:String, shop:Shop, title:&str, route:&str) -> Markup {
-	let form = views::main::item_detail(&id, &shop, title, route);
+	let form = views::shared::item_detail(&id, &shop, title, route);
 
 	views::main::page(form)	
 }
